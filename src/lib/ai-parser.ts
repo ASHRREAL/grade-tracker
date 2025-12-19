@@ -13,8 +13,6 @@ export type ParsedCourse = {
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 export const AI_MODELS = [
-  { id: "groq/compound", name: "Groq Compound", context: "70K" },
-  { id: "groq/compound-mini", name: "Groq Compound Mini", context: "70K" },
   { id: "meta-llama/llama-4-scout-17b-16e-instruct", name: "Llama 4 Scout", context: "30K" },
   { id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B", context: "12K" },
   { id: "qwen/qwen3-32b", name: "Qwen 3 32B", context: "6K" },
