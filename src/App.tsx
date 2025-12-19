@@ -13,7 +13,9 @@ import {
   convertParsedToCourse,
   getStoredApiKey,
   setStoredApiKey,
+  AI_MODELS,
   type ParsedCourse,
+  type AIModelId,
 } from "./lib/ai-parser";
 
 function uid() {
@@ -87,6 +89,7 @@ export default function App() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiParsedCourses, setAiParsedCourses] = useState<ParsedCourse[] | null>(null);
+  const [aiModel, setAiModel] = useState<AIModelId>(AI_MODELS[0].id);
 
   // Sync active semester ID to localStorage
   useEffect(() => {
@@ -276,7 +279,7 @@ export default function App() {
     setStoredApiKey(aiApiKey.trim());
     
     try {
-      const parsed = await parseOutlineWithGroq(aiOutlineText.trim(), aiApiKey.trim());
+      const parsed = await parseOutlineWithGroq(aiOutlineText.trim(), aiApiKey.trim(), aiModel);
       console.log("Parsed courses:", parsed);
       setAiParsedCourses(parsed);
     } catch (e) {
@@ -364,6 +367,21 @@ export default function App() {
                     <span className="gt-fieldHint">
                       Get your free API key at <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a>
                     </span>
+                  </label>
+                  
+                  <label className="gt-field" style={{ marginBottom: 12 }}>
+                    AI Model
+                    <select
+                      className="gt-input"
+                      value={aiModel}
+                      onChange={e => setAiModel(e.target.value as AIModelId)}
+                    >
+                      {AI_MODELS.map(m => (
+                        <option key={m.id} value={m.id}>
+                          {m.name} ({m.context} context)
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   
                   <label className="gt-field" style={{ marginBottom: 12 }}>

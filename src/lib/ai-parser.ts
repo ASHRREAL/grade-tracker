@@ -9,18 +9,30 @@ export type ParsedCourse = {
   }[];
 };
 
-// Groq API - generous free tier (14,400 requests/day)
+// Groq API - generous free tier
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+export const AI_MODELS = [
+  { id: "groq/compound", name: "Groq Compound", context: "70K" },
+  { id: "groq/compound-mini", name: "Groq Compound Mini", context: "70K" },
+  { id: "meta-llama/llama-4-scout-17b-16e-instruct", name: "Llama 4 Scout", context: "30K" },
+  { id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B", context: "12K" },
+  { id: "qwen/qwen3-32b", name: "Qwen 3 32B", context: "6K" },
+] as const;
+
+export type AIModelId = typeof AI_MODELS[number]["id"];
 
 const SYSTEM_PROMPT = `You are a course outline parser. Extract ALL courses from the text and return ONLY valid JSON.
 
-MULTIPLE COURSES: If the text contains outlines for multiple courses, extract ALL of them into the courses array.
+**CRITICAL: MULTIPLE COURSES**
+The input may contain outlines for MULTIPLE different courses (e.g., MATH*2130, CIS*2520, ENGG*2400).
+You MUST extract EVERY course found - look for different course codes, titles, or "Course:" headers.
+DO NOT stop after the first course - scan the ENTIRE text for all courses.
 
-CRITICAL RULES FOR CALCULATING WEIGHTS:
+RULES FOR CALCULATING WEIGHTS:
 1. If assessments say "best X of Y" or "lowest Z dropped", only create entries for the ones that COUNT.
    Example: "6 quizzes with 2 lowest dropped = 10%" → only 4 quizzes count
    Create exactly 4 quiz entries (Quiz 1-4), each worth 10/4 = 2.5%
-   DO NOT create 6 entries - only create entries for assessments that contribute to the grade.
    
 2. If assessments are "equally weighted", divide the total weight by the count.
    Example: "3 assignments equally weighted = 24%" → each = 8%
@@ -29,7 +41,7 @@ CRITICAL RULES FOR CALCULATING WEIGHTS:
 
 4. Look for course code patterns like "MATH*2130", "CIS*1300", "ENGG*2400" for course names.
 
-5. Credits are usually listed as "Credits: 0.50" or "0.5 credits".
+5. Credits are usually listed as "Credits: 0.50" or "0.5 credits". Default to 0.5 if not found.
 
 Return format:
 {
@@ -56,10 +68,10 @@ Return format:
 }
 
 IMPORTANT:
-- Extract ALL courses found in the text - there may be 1 or many
+- The "courses" array MUST contain ALL courses found in the text
+- Carefully scan for course boundaries (new course codes, "Course:", page breaks)
 - "weight" = weight per INDIVIDUAL assessment
 - Only create entries for assessments that COUNT toward the final grade
-- If "2 lowest dropped from 6 quizzes worth 10%", create only 4 quiz entries at 2.5% each (NOT 6)
 - The total of all weights in a scheme should equal 100%
 - Categories: "Assignment", "Lab", "Quiz", "Midterm", "Test", "Final", "Project", "Participation", "Other"
 - Only the final exam gets "isFinal": true
@@ -67,15 +79,22 @@ IMPORTANT:
 
 export async function parseOutlineWithGroq(
   text: string,
-  apiKey: string
+  apiKey: string,
+  model: AIModelId = "meta-llama/llama-4-scout-17b-16e-instruct"
 ): Promise<ParsedCourse[]> {
-  console.log("Sending to Groq, text length:", text.length);
 
-  // Truncate text to stay under Groq's token limits (~4 chars per token, limit ~10k tokens for safety)
-  const maxChars = 35000;
+  const modelContextChars: Record<string, number> = {
+    "groq/compound": 250000, // 70K context
+    "groq/compound-mini": 250000, // 70K context
+    "meta-llama/llama-4-scout-17b-16e-instruct": 100000, // 30K context
+    "llama-3.3-70b-versatile": 35000, // 12K context
+    "qwen/qwen3-32b": 18000, // 6K context
+  };
+  const maxChars = modelContextChars[model] ?? 35000;
+  
   let truncatedText = text;
   if (text.length > maxChars) {
-    console.log(`Text too long (${text.length} chars), truncating to ${maxChars}`);
+    console.warn(`Text too long (${text.length} chars), truncating to ${maxChars}`);
     truncatedText = text.substring(0, maxChars) + "\n\n[Text truncated - paste only the grading/assessment sections for best results]";
   }
 
@@ -86,13 +105,13 @@ export async function parseOutlineWithGroq(
       "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
+      model: model,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: `Parse this course outline:\n\n${truncatedText}` },
+        { role: "user", content: `Parse ALL courses from this text. There may be multiple courses - extract every one you find:\n\n${truncatedText}` },
       ],
       temperature: 0.1,
-      max_tokens: 4096,
+      max_tokens: 8192,
     }),
   });
 
