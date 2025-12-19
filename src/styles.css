@@ -65,10 +65,13 @@ button, input {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
 }
 
 .gt-semesterSelect {
   flex: 1;
+  min-width: 0;
+  width: 0;
   border: 1px solid var(--border);
   background: #1a1a1a;
   color: var(--fg);
@@ -101,13 +104,16 @@ button, input {
 
 .gt-semesterInput {
   flex: 1;
+  min-width: 0;
+  width: 0;
   border: 1px solid var(--uofg-gold);
   background: var(--panel);
   color: var(--fg);
   border-radius: 6px;
   padding: 8px 12px;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
+  box-sizing: border-box;
 }
 
 .gt-semesterActions {
