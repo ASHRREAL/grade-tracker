@@ -84,8 +84,6 @@ export async function parseOutlineWithGroq(
 ): Promise<ParsedCourse[]> {
 
   const modelContextChars: Record<string, number> = {
-    "groq/compound": 250000, // 70K context
-    "groq/compound-mini": 250000, // 70K context
     "meta-llama/llama-4-scout-17b-16e-instruct": 100000, // 30K context
     "llama-3.3-70b-versatile": 35000, // 12K context
     "qwen/qwen3-32b": 18000, // 6K context
