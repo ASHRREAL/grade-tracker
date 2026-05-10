@@ -14,7 +14,12 @@ const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 export const AI_MODELS = [
   { id: "meta-llama/llama-4-scout-17b-16e-instruct", name: "Llama 4 Scout", context: "30K" },
-  { id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B", context: "12K" },
+  { id: "llama-3.1-8b-instant", name: "Llama 3.1 8B", context: "131K" },
+  { id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B", context: "131K" },
+  { id: "openai/gpt-oss-120b", name: "GPT OSS 120B", context: "131K" },
+  { id: "openai/gpt-oss-20b", name: "GPT OSS 20B", context: "131K" },
+  { id: "whisper-large-v3", name: "Whisper V3", context: "Audio" },
+  { id: "whisper-large-v3-turbo", name: "Whisper V3 Turbo", context: "Audio" },
   { id: "qwen/qwen3-32b", name: "Qwen 3 32B", context: "6K" },
 ] as const;
 
@@ -83,7 +88,10 @@ export async function parseOutlineWithGroq(
 
   const modelContextChars: Record<string, number> = {
     "meta-llama/llama-4-scout-17b-16e-instruct": 100000, // 30K context
-    "llama-3.3-70b-versatile": 35000, // 12K context
+    "llama-3.1-8b-instant": 400000, // 131K context
+    "llama-3.3-70b-versatile": 400000, // 131K context
+    "openai/gpt-oss-120b": 400000, // 131K context
+    "openai/gpt-oss-20b": 400000, // 131K context
     "qwen/qwen3-32b": 18000, // 6K context
   };
   const maxChars = modelContextChars[model] ?? 35000;
